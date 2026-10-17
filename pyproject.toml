@@ -15,7 +15,10 @@ select = ["E", "W", "F", "I", "B", "UP", "D", "ANN", "N", "PT", "SIM", "RUF", "C
 convention = "numpy"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["D"]
+# scripts/roboflow_api.py is the single seam around the untyped Roboflow SDK and its dynamic
+# JSON payloads; Any is the honest type there, so ANN401 is waived for that module only.
+"scripts/roboflow_api.py" = ["ANN401"]
+"tests/**" = ["D", "ANN401"]
 "templates/project/tests/**" = ["D"]
 "docs/conf.py" = ["D", "ANN", "N"]
 
@@ -27,7 +30,17 @@ mypy_path = "scripts"
 files = ["scripts", "tests", "docs/conf.py"]
 
 [[tool.mypy.overrides]]
-module = ["numpydoc", "numpydoc.*"]
+module = [
+    "numpydoc",
+    "numpydoc.*",
+    "yaml",
+    "cv2",
+    "cv2.*",
+    "roboflow",
+    "roboflow.*",
+    "segmentation_models_pytorch",
+    "segmentation_models_pytorch.*",
+]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

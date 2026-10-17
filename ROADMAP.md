@@ -45,9 +45,9 @@ Status: planned
 Goal: adapt the seed contract to this project, install the credential and data guardrails, and
 make the first pull request reviewable.
 
-- [ ] P0.1 Adapt `AGENTS.md`, `README.md`, and this roadmap to the flywheel
-- [ ] P0.2 Add the credential and data-artifact guardrails, and record the Roboflow API evidence in `notes/`
-- [ ] P0.3 Confirm the validator and the full dashboard pass on the scaffold commit
+- [x] P0.1 Adapt `AGENTS.md`, `README.md`, and this roadmap to the flywheel
+- [x] P0.2 Add the credential and data-artifact guardrails, and record the Roboflow API evidence in `notes/`
+- [x] P0.3 Confirm the validator and the full dashboard pass on the scaffold commit
 
 Acceptance criteria:
 
@@ -62,10 +62,10 @@ Status: planned
 Goal: pull a project's annotations and image lists into a local dataset directory with clear
 provenance, so `train` has a reproducible input.
 
-- [ ] P1.1 Define `config.yaml` and the loader that validates it
-- [ ] P1.2 Implement the Roboflow client that lists images, reads annotation status, and downloads annotations
-- [ ] P1.3 Implement `sync` with provenance (project, round, timestamp, counts)
-- [ ] P1.4 Unit and contract tests for the configuration loader and the client
+- [x] P1.1 Define `config.yaml` and the loader that validates it
+- [x] P1.2 Implement the Roboflow client that lists images, reads annotation status, and downloads annotations
+- [x] P1.3 Implement `sync` with provenance (project, round, timestamp, counts)
+- [x] P1.4 Unit and contract tests for the configuration loader and the client
 
 Acceptance criteria:
 
@@ -80,9 +80,9 @@ Status: planned
 Goal: train the pre-labeller from the synced labels with the proven recipe, and record the
 checkpoint's provenance.
 
-- [ ] P2.1 Implement the U-Net ResNet34 + focal/dice training recipe behind `train`
-- [ ] P2.2 Record checkpoint provenance: dataset round, recipe, and metrics
-- [ ] P2.3 Unit tests for the training configuration, dataset, and metrics
+- [x] P2.1 Implement the U-Net ResNet34 + focal/dice training recipe behind `train`
+- [x] P2.2 Record checkpoint provenance: dataset round, recipe, and metrics
+- [x] P2.3 Unit tests for the training configuration, dataset, and metrics
 
 Acceptance criteria:
 
@@ -97,10 +97,10 @@ Status: planned
 Goal: run the pre-labeller over a project's unannotated images and upload predictions as
 editable pre-labels, without ever touching an existing annotation.
 
-- [ ] P3.1 Implement the binary-mask to polygon conversion
-- [ ] P3.2 Implement the annotation-free verification that guards every upload
-- [ ] P3.3 Implement `prelabel` to predict on unannotated images and upload pre-labels
-- [ ] P3.4 Unit and contract tests for the conversion, the guard, and the uploader
+- [x] P3.1 Implement the binary-mask to polygon conversion
+- [x] P3.2 Implement the annotation-free verification that guards every upload
+- [x] P3.3 Implement `prelabel` to predict on unannotated images and upload pre-labels
+- [x] P3.4 Unit and contract tests for the conversion, the guard, and the uploader
 
 Acceptance criteria:
 
@@ -115,10 +115,10 @@ Status: planned
 Goal: track rounds so the loop can run repeatedly, and compute how much the human edited the
 pre-labels so the operator can decide when to stop.
 
-- [ ] P4.1 Implement the `loop_state.json` per-round record
-- [ ] P4.2 Implement the object-level and pixel-level convergence metrics
-- [ ] P4.3 Implement `status` and the per-round trend table
-- [ ] P4.4 Unit tests for the state store and the convergence metrics
+- [x] P4.1 Implement the `loop_state.json` per-round record
+- [x] P4.2 Implement the object-level and pixel-level convergence metrics
+- [x] P4.3 Implement `status` and the per-round trend table
+- [x] P4.4 Unit tests for the state store and the convergence metrics
 
 Acceptance criteria:
 

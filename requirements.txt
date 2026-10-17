@@ -1,0 +1,7 @@
+# Runtime dependencies for the flywheel CLIs (no deep-learning stack).
+# Light enough for CI: importing the package never imports torch.
+numpy>=1.26
+opencv-python-headless>=4.9
+PyYAML>=6.0
+requests>=2.31
+roboflow>=1.1

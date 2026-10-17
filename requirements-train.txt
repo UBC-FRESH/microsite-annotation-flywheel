@@ -1,0 +1,5 @@
+# Heavy training dependencies, installed only where a GPU or a long CPU run is available.
+# The training and pre-labelling code imports these lazily, so CI and unit tests skip them.
+torch>=2.4
+torchvision>=0.19
+segmentation-models-pytorch>=0.3
