@@ -12,12 +12,12 @@ parent issue exists and the maintainer approves it.
 
 | Phase | Parent issue | Branch | Status |
 | --- | --- | --- | --- |
-| P0 Scaffold | TBD | `feature/p0-scaffold` | planned |
-| P1 Sync | TBD | `feature/p1-sync` | planned |
-| P2 Train | TBD | `feature/p2-train` | planned |
-| P3 Prelabel and upload | TBD | `feature/p3-prelabel-upload` | planned |
-| P4 Loop bookkeeping and convergence | TBD | `feature/p4-loop-convergence` | planned |
-| P5 Runbook and acceptance | TBD | `feature/p5-runbook-acceptance` | planned |
+| P0 Scaffold | #1 | `feature/p0-scaffold` | active |
+| P1 Sync | #5 | `feature/p1-sync` | planned |
+| P2 Train | #10 | `feature/p2-train` | planned |
+| P3 Prelabel and upload | #14 | `feature/p3-prelabel-upload` | planned |
+| P4 Loop bookkeeping and convergence | #19 | `feature/p4-loop-convergence` | planned |
+| P5 Runbook and acceptance | #24 | `feature/p5-runbook-acceptance` | planned |
 
 ## Lifecycle Map
 
@@ -38,16 +38,16 @@ parent issue exists and the maintainer approves it.
 
 ## Phase 0: Scaffold
 
-Parent issue: TBD
+Parent issue: #1
 Branch: `feature/p0-scaffold`
-Status: planned
+Status: active
 
 Goal: adapt the seed contract to this project, install the credential and data guardrails, and
 make the first pull request reviewable.
 
-- [x] P0.1 Adapt `AGENTS.md`, `README.md`, and this roadmap to the flywheel
-- [x] P0.2 Add the credential and data-artifact guardrails, and record the Roboflow API evidence in `notes/`
-- [x] P0.3 Confirm the validator and the full dashboard pass on the scaffold commit
+- [x] P0.1 Adapt `AGENTS.md`, `README.md`, and this roadmap to the flywheel (#2)
+- [x] P0.2 Add the credential and data-artifact guardrails, and record the Roboflow API evidence in `notes/` (#3)
+- [x] P0.3 Confirm the validator and the full dashboard pass on the scaffold commit (#4)
 
 Acceptance criteria:
 
@@ -55,17 +55,17 @@ Acceptance criteria:
 
 ## Phase 1: Sync
 
-Parent issue: TBD
+Parent issue: #5
 Branch: `feature/p1-sync`
 Status: planned
 
 Goal: pull a project's annotations and image lists into a local dataset directory with clear
 provenance, so `train` has a reproducible input.
 
-- [x] P1.1 Define `config.yaml` and the loader that validates it
-- [x] P1.2 Implement the Roboflow client that lists images, reads annotation status, and downloads annotations
+- [x] P1.1 Define `config.yaml` and the loader that validates it (#6)
+- [x] P1.2 Implement the Roboflow client that lists images, reads annotation status, and downloads annotations (#7)
 - [x] P1.3 Implement `sync` with provenance (project, round, timestamp, counts)
-- [x] P1.4 Unit and contract tests for the configuration loader and the client
+- [x] P1.4 Unit and contract tests for the configuration loader and the client (#9)
 
 Acceptance criteria:
 
@@ -73,16 +73,16 @@ Acceptance criteria:
 
 ## Phase 2: Train
 
-Parent issue: TBD
+Parent issue: #10
 Branch: `feature/p2-train`
 Status: planned
 
 Goal: train the pre-labeller from the synced labels with the proven recipe, and record the
 checkpoint's provenance.
 
-- [x] P2.1 Implement the U-Net ResNet34 + focal/dice training recipe behind `train`
-- [x] P2.2 Record checkpoint provenance: dataset round, recipe, and metrics
-- [x] P2.3 Unit tests for the training configuration, dataset, and metrics
+- [x] P2.1 Implement the U-Net ResNet34 + focal/dice training recipe behind `train` (#11)
+- [x] P2.2 Record checkpoint provenance: dataset round, recipe, and metrics (#12)
+- [x] P2.3 Unit tests for the training configuration, dataset, and metrics (#13)
 
 Acceptance criteria:
 
@@ -90,17 +90,17 @@ Acceptance criteria:
 
 ## Phase 3: Prelabel and upload
 
-Parent issue: TBD
+Parent issue: #14
 Branch: `feature/p3-prelabel-upload`
 Status: planned
 
 Goal: run the pre-labeller over a project's unannotated images and upload predictions as
 editable pre-labels, without ever touching an existing annotation.
 
-- [x] P3.1 Implement the binary-mask to polygon conversion
-- [x] P3.2 Implement the annotation-free verification that guards every upload
-- [x] P3.3 Implement `prelabel` to predict on unannotated images and upload pre-labels
-- [x] P3.4 Unit and contract tests for the conversion, the guard, and the uploader
+- [x] P3.1 Implement the binary-mask to polygon conversion (#15)
+- [x] P3.2 Implement the annotation-free verification that guards every upload (#16)
+- [x] P3.3 Implement `prelabel` to predict on unannotated images and upload pre-labels (#17)
+- [x] P3.4 Unit and contract tests for the conversion, the guard, and the uploader (#18)
 
 Acceptance criteria:
 
@@ -108,17 +108,17 @@ Acceptance criteria:
 
 ## Phase 4: Loop bookkeeping and convergence
 
-Parent issue: TBD
+Parent issue: #19
 Branch: `feature/p4-loop-convergence`
 Status: planned
 
 Goal: track rounds so the loop can run repeatedly, and compute how much the human edited the
 pre-labels so the operator can decide when to stop.
 
-- [x] P4.1 Implement the `loop_state.json` per-round record
-- [x] P4.2 Implement the object-level and pixel-level convergence metrics
-- [x] P4.3 Implement `status` and the per-round trend table
-- [x] P4.4 Unit tests for the state store and the convergence metrics
+- [x] P4.1 Implement the `loop_state.json` per-round record (#20)
+- [x] P4.2 Implement the object-level and pixel-level convergence metrics (#21)
+- [x] P4.3 Implement `status` and the per-round trend table (#22)
+- [x] P4.4 Unit tests for the state store and the convergence metrics (#23)
 
 Acceptance criteria:
 
@@ -126,15 +126,15 @@ Acceptance criteria:
 
 ## Phase 5: Runbook and acceptance
 
-Parent issue: TBD
+Parent issue: #24
 Branch: `feature/p5-runbook-acceptance`
 Status: planned
 
 Goal: hand the operator a runbook, run one full dry loop small-scale, and record the evidence.
 
-- [ ] P5.1 Write `RUNBOOK.md` for a non-coder operator
-- [ ] P5.2 Run the dry loop on a handful of images and record the acceptance evidence
-- [ ] P5.3 Publish the docs and prepare the phase close-out
+- [ ] P5.1 Write `RUNBOOK.md` for a non-coder operator (#25)
+- [ ] P5.2 Run the dry loop on a handful of images and record the acceptance evidence (#26)
+- [ ] P5.3 Publish the docs and prepare the phase close-out (#27)
 
 Acceptance criteria:
 
