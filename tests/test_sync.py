@@ -45,6 +45,24 @@ def test_run_sync_skips_images_without_geometry(tmp_path: Path) -> None:
     assert result.annotated == 0
 
 
+def test_run_sync_trains_only_on_dataset_images(tmp_path: Path) -> None:
+    # A prediction-only image carries an annotation count but is not in the Dataset, and must
+    # never be used as training ground truth.
+    client = FakeClient(
+        summaries=[
+            summary("h1", "human.jpg", 3, "train"),
+            summary("p1", "prediction.jpg", 1, "train"),
+        ],
+        dataset_ids={"h1"},
+    )
+    client.details["h1"] = detail("h1", "human.jpg", objects=[square_object()])
+    config = make_config(tmp_path)
+    result = run_sync(config, client)
+    assert result.annotated == 1
+    assert (config.dataset_dir / "train" / "human.jpg").is_file()
+    assert not (config.dataset_dir / "train" / "prediction.jpg").exists()
+
+
 def test_load_provenance_round_trip(tmp_path: Path) -> None:
     config = make_config(tmp_path)
     result = run_sync(config, _client())

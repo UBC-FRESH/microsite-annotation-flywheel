@@ -106,7 +106,9 @@ def test_iter_images_wraps_search_errors() -> None:
 
 def test_iter_images_rejects_non_list() -> None:
     class NonList:
-        def search(self, limit: int, offset: int, fields: list[str]) -> object:
+        def search(
+            self, limit: int, offset: int, fields: list[str], in_dataset: object = None
+        ) -> object:
             return {"nope": True}
 
     with pytest.raises(RoboflowError, match="was not a list"):

@@ -114,10 +114,12 @@ def run_sync(
     """
     project = config.train_project
     logger(f"sync: listing images in '{project}'")
-    summaries = list(client.iter_images(project))
-    annotated = [s for s in summaries if s.is_annotated]
-    unannotated = [s for s in summaries if not s.is_annotated]
-    logger(f"sync: {len(annotated)} annotated, {len(unannotated)} unannotated")
+    # Train only on images in the project's Dataset: those are the human annotations. Images
+    # that merely carry a model prediction are outside the Dataset and must never be training
+    # ground truth.
+    annotated = [s for s in client.iter_images(project, in_dataset=True) if s.is_annotated]
+    unannotated = [s for s in client.iter_images(project, in_dataset=False) if not s.is_annotated]
+    logger(f"sync: {len(annotated)} annotated (Dataset), {len(unannotated)} unannotated")
 
     chosen = annotated[:limit] if limit else annotated
     config.dataset_dir.mkdir(parents=True, exist_ok=True)

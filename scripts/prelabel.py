@@ -148,7 +148,7 @@ def run_prelabel(
     model = load_model(checkpoint, config.model.encoder, device=target)
     logger(f"prelabel: loaded {checkpoint.name} on {target}")
 
-    candidates = [s for s in client.iter_images(project) if not s.is_annotated]
+    candidates = [s for s in client.iter_images(project, in_dataset=False) if not s.is_annotated]
     chosen = candidates[:limit] if limit else candidates
     logger(
         "prelabel: guard ON - only images with zero annotations are targeted; "

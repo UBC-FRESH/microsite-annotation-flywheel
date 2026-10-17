@@ -60,7 +60,7 @@ class FakeProject:
         self.raise_on_search = False
         self.raise_on_save = False
 
-    def search(self, limit: int, offset: int, fields: list[str]) -> Any:
+    def search(self, limit: int, offset: int, fields: list[str], in_dataset: object = None) -> Any:
         """Return the page for the requested offset."""
         if self.raise_on_search:
             raise RuntimeError("search failed")
@@ -103,16 +103,34 @@ def detail(
 class FakeClient(RoboflowClient):
     """A :class:`RoboflowClient` that never touches the network."""
 
-    def __init__(self, *, summaries: list[ImageSummary] | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        summaries: list[ImageSummary] | None = None,
+        dataset_ids: set[str] | None = None,
+    ) -> None:
         # Deliberately do not call super().__init__: there is no network and no key.
         self.summaries = summaries if summaries is not None else []
+        # When given, models which images are truly in the Dataset (human annotations),
+        # independent of whether they carry a model prediction.
+        self.dataset_ids = dataset_ids
         self.details: dict[str, ImageDetail] = {}
         self.uploads: list[tuple[str, Mapping[str, Any]]] = []
         self.uploads_error = False
         self.image = np.zeros((32, 32, 3), dtype=np.uint8)
 
-    def iter_images(self, slug: str) -> Iterator[ImageSummary]:
-        """Yield the canned summaries."""
+    def iter_images(self, slug: str, *, in_dataset: bool | None = None) -> Iterator[ImageSummary]:
+        """Yield the canned summaries, filtered the way a real project would be."""
+        if self.dataset_ids is not None:
+            if in_dataset is True:
+                return iter([s for s in self.summaries if s.id in self.dataset_ids])
+            if in_dataset is False:
+                return iter([s for s in self.summaries if s.id not in self.dataset_ids])
+            return iter(self.summaries)
+        if in_dataset is True:
+            return iter([s for s in self.summaries if s.is_annotated])
+        if in_dataset is False:
+            return iter([s for s in self.summaries if not s.is_annotated])
         return iter(self.summaries)
 
     def image_detail(self, slug: str, image_id: str) -> ImageDetail:

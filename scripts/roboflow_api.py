@@ -259,13 +259,17 @@ class RoboflowClient:
             annotation=str(project.get("annotation", "")),
         )
 
-    def iter_images(self, slug: str) -> Iterator[ImageSummary]:
-        """Iterate every image in a project, newest listing order.
+    def iter_images(self, slug: str, *, in_dataset: bool | None = None) -> Iterator[ImageSummary]:
+        """Iterate images in a project.
 
         Parameters
         ----------
         slug : str
             Project slug.
+        in_dataset : bool or None, optional
+            When ``True``, list only images already in the project's Dataset (the human
+            annotations). When ``False``, list images outside the Dataset (including images
+            that only carry model predictions). ``None`` lists everything.
 
         Yields
         ------
@@ -285,6 +289,7 @@ class RoboflowClient:
                     limit=SEARCH_PAGE,
                     offset=offset,
                     fields=["id", "name", "annotations", "split"],
+                    in_dataset=in_dataset,
                 )
             except Exception as exc:  # the SDK raises a variety of error types
                 raise RoboflowError(f"listing images for '{slug}' failed: {exc}") from exc
