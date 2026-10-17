@@ -51,6 +51,19 @@ def test_run_prelabel_honours_limit(tmp_path: Path) -> None:
     assert result.uploaded == 1
 
 
+def test_run_prelabel_skips_images_without_objects(tmp_path: Path) -> None:
+    config = make_config(tmp_path, threshold=1.5)  # no pixel can exceed 1.0, so no objects
+    client = FakeClient(summaries=[summary("u1", "u.jpg", 0)])
+    client.details["u1"] = detail("u1", "u.jpg", objects=[])
+    checkpoint = _checkpoint(config)
+
+    result = run_prelabel(config, client, checkpoint, device=torch.device("cpu"))
+
+    assert result.uploaded == 0
+    assert result.empty == 1
+    assert client.uploads == []
+
+
 def test_run_prelabel_propagates_upload_error(tmp_path: Path) -> None:
     config = make_config(tmp_path)
     client = FakeClient(summaries=[summary("u1", "u.jpg", 0)])

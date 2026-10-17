@@ -43,6 +43,8 @@ class PrelabelResult:
         Number of images that received a pre-label.
     skipped : int
         Number of images skipped because they were already annotated.
+    empty : int
+        Number of target images skipped because the model predicted no objects.
     uploaded_images : list of str
         Image ids that received a pre-label.
     skipped_images : list of str
@@ -56,6 +58,7 @@ class PrelabelResult:
     checkpoint: Path
     uploaded: int = 0
     skipped: int = 0
+    empty: int = 0
     uploaded_images: list[str] = field(default_factory=list)
     skipped_images: list[str] = field(default_factory=list)
     uploads_path: Path = Path()
@@ -158,6 +161,7 @@ def run_prelabel(
 
     uploaded_ids: list[str] = []
     skipped_ids: list[str] = []
+    empty_count = 0
     records: list[dict[str, Any]] = []
     for index, summary in enumerate(chosen, start=1):
         # Guard: re-read the image and refuse to write over any existing annotation.
@@ -177,6 +181,10 @@ def run_prelabel(
         )
         cv2.imwrite(str(masks_dir / f"{Path(summary.name).stem}_mask.png"), mask * 255)
         polygons = mask_to_polygons(mask, min_area=config.prelabel.min_polygon_area)
+        if not polygons:
+            empty_count += 1
+            logger(f"prelabel: [{index}/{len(chosen)}] {summary.name} (no objects; skipped)")
+            continue
         document = polygons_to_coco(
             image_name=summary.name,
             width=width,
@@ -219,13 +227,16 @@ def run_prelabel(
         + "\n",
         encoding="utf-8",
     )
-    logger(f"prelabel: uploaded {len(uploaded_ids)}, skipped {len(skipped_ids)}")
+    logger(
+        f"prelabel: uploaded {len(uploaded_ids)}, skipped {len(skipped_ids)}, empty {empty_count}"
+    )
     return PrelabelResult(
         project=project,
         round_number=config.round_number,
         checkpoint=checkpoint,
         uploaded=len(uploaded_ids),
         skipped=len(skipped_ids),
+        empty=empty_count,
         uploaded_images=uploaded_ids,
         skipped_images=skipped_ids,
         uploads_path=uploads_path,
