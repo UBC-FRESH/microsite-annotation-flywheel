@@ -240,6 +240,9 @@ def run_train(
                 dataset, batch_size=config.model.batch_size, shuffle=(split == "train")
             )
     logger(f"train: {counts} on {target}")
+    has_valid = "valid" in loaders
+    if not has_valid:
+        logger("train: no validation split; keeping the latest epoch's weights")
 
     model = build_model(config.model.encoder, encoder_weights=encoder_weights).to(target)
     focal = FocalLoss()
@@ -290,7 +293,7 @@ def run_train(
         history.append(
             {"epoch": epoch, "train_loss": train_loss / train_batches, "val_iou": val_iou}
         )
-        improved = val_iou > best_iou or best_epoch == 0
+        improved = (not has_valid) or val_iou > best_iou or best_epoch == 0
         if improved:
             best_iou, best_epoch, stale = val_iou, epoch, 0
             torch.save(model.state_dict(), checkpoint_path)

@@ -98,3 +98,13 @@ def test_run_train_requires_training_images(tmp_path: Path) -> None:
     (config.dataset_dir / "train").mkdir(parents=True)
     with pytest.raises(FileNotFoundError, match="no training images"):
         run_train(config, encoder_weights=None, device=torch.device("cpu"))
+
+
+def test_run_train_without_validation_keeps_latest(tmp_path: Path) -> None:
+    config = make_config(tmp_path)
+    _write_split(config.dataset_dir, "train", 2)  # no valid, no test
+    result = run_train(config, encoder_weights=None, device=torch.device("cpu"))
+
+    assert result.epochs_run == config.model.epochs
+    assert result.best_epoch == config.model.epochs
+    assert result.checkpoint_path.is_file()
