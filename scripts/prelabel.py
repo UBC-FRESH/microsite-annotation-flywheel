@@ -76,8 +76,13 @@ def predict_image(
     *,
     threshold: float,
     tta: bool,
+    size: int,
 ) -> tuple[np.ndarray, int, int]:
     """Predict the positive-class mask for one image file.
+
+    The image is resized to the square training size before inference, then the probability
+    map is resized back to the native resolution, so training and inference see the same
+    geometry.
 
     Parameters
     ----------
@@ -91,11 +96,13 @@ def predict_image(
         Probability threshold for the positive class.
     tta : bool
         Whether to average the dihedral views.
+    size : int
+        Square size the model was trained at.
 
     Returns
     -------
     tuple of (numpy.ndarray, int, int)
-        The ``uint8`` mask, the width, and the height.
+        The ``uint8`` mask at native resolution, the width, and the height.
 
     Raises
     ------
@@ -107,7 +114,9 @@ def predict_image(
         raise FileNotFoundError(f"could not read image: {image_path}")
     height, width = image.shape[:2]
     rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
-    probability = prob_map(model, rgb, device, tta=tta)
+    resized = cv2.resize(rgb, (size, size), interpolation=cv2.INTER_LINEAR)
+    probability = prob_map(model, resized, device, tta=tta)
+    probability = cv2.resize(probability, (width, height), interpolation=cv2.INTER_LINEAR)
     return (probability > threshold).astype(np.uint8), width, height
 
 
@@ -178,6 +187,7 @@ def run_prelabel(
             target,
             threshold=config.prelabel.threshold,
             tta=config.prelabel.tta,
+            size=config.model.image_size,
         )
         cv2.imwrite(str(masks_dir / f"{Path(summary.name).stem}_mask.png"), mask * 255)
         polygons = mask_to_polygons(mask, min_area=config.prelabel.min_polygon_area)

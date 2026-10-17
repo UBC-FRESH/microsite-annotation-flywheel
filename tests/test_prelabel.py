@@ -78,4 +78,6 @@ def test_run_prelabel_propagates_upload_error(tmp_path: Path) -> None:
 def test_predict_image_missing_file(tmp_path: Path) -> None:
     model = build_model("resnet34", encoder_weights=None)
     with pytest.raises(FileNotFoundError, match="could not read image"):
-        predict_image(model, tmp_path / "absent.jpg", torch.device("cpu"), threshold=0.5, tta=False)
+        predict_image(
+            model, tmp_path / "absent.jpg", torch.device("cpu"), threshold=0.5, tta=False, size=64
+        )
