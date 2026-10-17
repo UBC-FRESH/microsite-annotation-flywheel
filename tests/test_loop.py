@@ -91,6 +91,22 @@ def test_cmd_prelabel(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     assert client.uploads[0][0] == "u1"
 
 
+def test_cmd_prelabel_uses_config_limit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    config = make_config(tmp_path, limit=1)
+    config.checkpoints_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        build_model("resnet34", encoder_weights=None).state_dict(),
+        config.checkpoints_dir / "best.pt",
+    )
+    client = FakeClient(summaries=[summary("u1", "u.jpg", 0), summary("u2", "v.jpg", 0)])
+    client.details["u1"] = detail("u1", "u.jpg", objects=[])
+    monkeypatch.setattr(loop, "build_client", lambda config, root: client)
+
+    # No --limit on the command line: the config's prelabel.limit (1) must win.
+    assert loop.cmd_prelabel(config, loop.build_parser().parse_args(["prelabel"])) == 0
+    assert len(client.uploads) == 1
+
+
 def test_cmd_compare(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     config = make_config(tmp_path)
     config.predictions_dir.mkdir(parents=True, exist_ok=True)

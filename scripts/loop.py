@@ -237,7 +237,8 @@ def cmd_prelabel(config: Config, args: argparse.Namespace) -> int:
         Process exit status.
     """
     checkpoint = Path(args.checkpoint) if args.checkpoint else config.checkpoints_dir / "best.pt"
-    result = run_prelabel(config, build_client(config, ROOT), checkpoint, limit=args.limit)
+    limit = args.limit if args.limit is not None else config.prelabel.limit
+    result = run_prelabel(config, build_client(config, ROOT), checkpoint, limit=limit)
     _update_state(
         config,
         checkpoint=str(checkpoint),
@@ -360,7 +361,12 @@ def build_parser() -> argparse.ArgumentParser:
     prelabel.add_argument(
         "--checkpoint", default="", help="checkpoint path (default: this round's best)"
     )
-    prelabel.add_argument("--limit", type=int, default=0, help="maximum images (0 = all)")
+    prelabel.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="maximum images (default: prelabel.limit in config.yaml; 0 means all)",
+    )
     prelabel.set_defaults(func=cmd_prelabel)
 
     compare = sub.add_parser("compare", help="measure convergence after correction")
