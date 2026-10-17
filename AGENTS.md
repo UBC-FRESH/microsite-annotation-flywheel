@@ -119,4 +119,19 @@ Record the result in the changelog entry for the milestone.
 
 ## Project-specific rules
 
-Add domain guardrails here, each with its reason. Keep shared workflow rules out of this section.
+- **Never overwrite a human annotation.** Pre-labels are written only to images that the API
+  reports annotation-free, with overwrite disabled. Every upload verifies the target image's
+  annotation status first and reports the counts it saw. Reason: the human labels are the
+  scarce, expensive asset this whole loop exists to grow.
+- **No secrets in tracked files.** The Roboflow key lives in a gitignored `.env` as
+  `ROBOFLOW_API_KEY`; AWS/S3 credentials live outside the repository. Reason: the validator
+  rejects secret-shaped strings, and a leaked key breaks trust.
+- **Large artifacts go to the data repo, not here.** Checkpoints, datasets, predictions, and
+  galleries belong to the DataLad data repository; only small JSON metrics and state live in
+  git. Reason: the code repo stays cloneable and the payloads stay reproducible.
+- **Provenance everywhere.** Every checkpoint records its dataset round, recipe, and metrics.
+  Every pre-label upload records its checkpoint, model version, and round. Reason: without
+  provenance a round cannot be reproduced or compared.
+- **The operator surface is four boring commands.** `sync`, `train`, `prelabel`, and `status`,
+  with loud progress output and obvious errors, wrapped by `scripts/loop.py`. Reason: the
+  primary operator is a domain expert, not a programmer.
