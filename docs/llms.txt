@@ -1,0 +1,8 @@
+# Microsite Annotation Flywheel
+
+> Agent-facing index for Microsite Annotation Flywheel. Read the linked pages before you change the project.
+
+## Start here
+
+- [Home](index.html): the documentation home for the project.
+- [API reference](api/index.html): every public function, with its parameters, types, and return values.

@@ -1,0 +1,33 @@
+# Every hook here is also a gate in the green dashboard (scripts/dashboard.py).
+# Install once with `pre-commit install`. Each commit then runs the same checks as CI.
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: python -m ruff check --force-exclude
+        language: system
+        types: [python]
+      - id: ruff-format
+        name: ruff format --check
+        entry: python -m ruff format --check --force-exclude
+        language: system
+        types: [python]
+      - id: mypy
+        name: mypy --strict
+        entry: python -m mypy
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: workflow-validator
+        name: workflow validator
+        entry: python scripts/check_workflow.py
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: pytest
+        name: pytest with coverage gate
+        entry: python -m pytest -q
+        language: system
+        pass_filenames: false
+        always_run: true
