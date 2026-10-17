@@ -18,6 +18,7 @@ from typing import Any
 import cv2
 import numpy as np
 import torch
+from numpy.typing import NDArray
 
 from config import Config
 from geometry import mask_to_polygons, polygons_to_coco
@@ -114,10 +115,14 @@ def predict_image(
         raise FileNotFoundError(f"could not read image: {image_path}")
     height, width = image.shape[:2]
     rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
-    resized = cv2.resize(rgb, (size, size), interpolation=cv2.INTER_LINEAR)
+    resized: NDArray[np.float32] = cv2.resize(
+        rgb, (size, size), interpolation=cv2.INTER_LINEAR
+    ).astype(np.float32)
     probability = prob_map(model, resized, device, tta=tta)
-    probability = cv2.resize(probability, (width, height), interpolation=cv2.INTER_LINEAR)
-    return (probability > threshold).astype(np.uint8), width, height
+    restored: NDArray[np.float32] = cv2.resize(
+        probability, (width, height), interpolation=cv2.INTER_LINEAR
+    ).astype(np.float32)
+    return (restored > threshold).astype(np.uint8), width, height
 
 
 def run_prelabel(
