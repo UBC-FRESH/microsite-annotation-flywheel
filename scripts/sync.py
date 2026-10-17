@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import shutil
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -122,6 +123,10 @@ def run_sync(
     logger(f"sync: {len(annotated)} annotated (Dataset), {len(unannotated)} unannotated")
 
     chosen = annotated[:limit] if limit else annotated
+    # Start from a clean dataset directory so that images removed or no longer annotated in
+    # Roboflow cannot linger and be trained on in a later round.
+    if config.dataset_dir.exists():
+        shutil.rmtree(config.dataset_dir)
     config.dataset_dir.mkdir(parents=True, exist_ok=True)
     for split in SPLITS:
         (config.dataset_dir / split).mkdir(parents=True, exist_ok=True)

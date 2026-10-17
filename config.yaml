@@ -25,7 +25,8 @@ model:
 
 prelabel:
   threshold: 0.5
-  min_polygon_area: 64
+  min_polygon_area: 150
   tta: true
-  limit: 0
+  # A bounded default: pre-label a reviewable batch, not the whole project. Raise it on purpose.
+  limit: 50
   split: train

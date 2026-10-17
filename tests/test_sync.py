@@ -63,6 +63,15 @@ def test_run_sync_trains_only_on_dataset_images(tmp_path: Path) -> None:
     assert not (config.dataset_dir / "train" / "prediction.jpg").exists()
 
 
+def test_run_sync_clears_stale_files(tmp_path: Path) -> None:
+    config = make_config(tmp_path)
+    stale = config.dataset_dir / "train" / "stale.jpg"
+    stale.parent.mkdir(parents=True, exist_ok=True)
+    stale.write_bytes(b"old")
+    run_sync(config, _client())
+    assert not stale.exists()
+
+
 def test_load_provenance_round_trip(tmp_path: Path) -> None:
     config = make_config(tmp_path)
     result = run_sync(config, _client())
