@@ -162,6 +162,7 @@ def test_upload_annotation_ok() -> None:
     assert sent["image_id"] == "a"
     assert sent["is_prediction"] is True
     assert sent["annotation_overwrite"] is False
+    assert sent["add_to_dataset"] is False
     assert sent["annotation_path"]["name"] == "annotation.coco.json"
 
 

@@ -150,6 +150,10 @@ def run_prelabel(
 
     candidates = [s for s in client.iter_images(project) if not s.is_annotated]
     chosen = candidates[:limit] if limit else candidates
+    logger(
+        "prelabel: guard ON - only images with zero annotations are targeted; "
+        "existing annotations are never overwritten and images are never added to the Dataset"
+    )
     logger(f"prelabel: {len(candidates)} annotation-free images, processing {len(chosen)}")
 
     uploaded_ids: list[str] = []

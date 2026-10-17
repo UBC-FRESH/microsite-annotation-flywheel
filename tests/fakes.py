@@ -133,6 +133,7 @@ class FakeClient(RoboflowClient):
         *,
         name: str = "annotation.coco.json",
         labelmap: Mapping[str, str] | None = None,
+        add_to_dataset: bool = False,
     ) -> Mapping[str, Any]:
         """Record an upload, or fail when configured to."""
         if self.uploads_error:

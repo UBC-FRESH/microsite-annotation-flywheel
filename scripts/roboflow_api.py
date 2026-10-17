@@ -368,11 +368,13 @@ class RoboflowClient:
         *,
         name: str = "annotation.coco.json",
         labelmap: Mapping[str, str] | None = None,
+        add_to_dataset: bool = False,
     ) -> Mapping[str, Any]:
         """Attach a prediction annotation to an existing image.
 
-        Never overwrites an existing annotation: ``annotation_overwrite`` is fixed ``False``
-        and the annotation is marked ``is_prediction``.
+        Never overwrites an existing annotation (``annotation_overwrite`` is fixed
+        ``False``) and never joins the image to the project Dataset
+        (``add_to_dataset=False``), so the annotated "dataset" images are untouched.
 
         Parameters
         ----------
@@ -386,6 +388,8 @@ class RoboflowClient:
             File name that tells Roboflow the annotation format.
         labelmap : mapping of str to str or None, optional
             Numeric class id to class name, for formats that need it.
+        add_to_dataset : bool, optional
+            Whether the annotated image may join the project Dataset. Fixed to ``False``.
 
         Returns
         -------
@@ -406,6 +410,7 @@ class RoboflowClient:
                 image_id=image_id,
                 is_prediction=True,
                 annotation_overwrite=False,
+                add_to_dataset=add_to_dataset,
             )
         except Exception as exc:  # the SDK raises a variety of error types
             raise RoboflowError(
