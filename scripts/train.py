@@ -236,9 +236,8 @@ def run_train(
     counts = _split_counts(config.dataset_dir)
     if counts["train"] == 0:
         raise FileNotFoundError(f"no training images in {config.dataset_dir / 'train'}")
-    train_dataset: Dataset[tuple[torch.Tensor, torch.Tensor]] = SegDataset(
-        config.dataset_dir, "train", size, augment=True
-    )
+    train_base = SegDataset(config.dataset_dir, "train", size, augment=True)
+    train_count = len(train_base)
     valid_base = SegDataset(config.dataset_dir, "valid", size, augment=False)
     valid_dataset: Dataset[tuple[torch.Tensor, torch.Tensor]] | None = (
         valid_base if len(valid_base) > 0 else None
@@ -246,19 +245,23 @@ def run_train(
     test_dataset = SegDataset(config.dataset_dir, "test", size, augment=False)
 
     holdout = 0
-    if valid_dataset is None and len(train_dataset) >= 5:
+    if valid_dataset is None and train_count >= 5:
         # The project has no validation split (all Dataset images are 'train'). Hold out a
         # deterministic slice so the best epoch can be chosen instead of blindly keeping the
         # last one, which can collapse to all-background.
-        holdout = max(1, int(round(len(train_dataset) * config.model.valid_fraction)))
-        indices = list(range(len(train_dataset)))
-        step = max(1, len(indices) // holdout)
+        holdout = max(1, round(train_count * config.model.valid_fraction))
+        indices = list(range(train_count))
+        step = max(1, train_count // holdout)
         valid_indices = indices[::step][:holdout]
         valid_set = set(valid_indices)
         train_indices = [i for i in indices if i not in valid_set]
         valid_view = SegDataset(config.dataset_dir, "train", size, augment=False)
         valid_dataset = Subset(valid_view, valid_indices)
-        train_dataset = Subset(train_dataset, train_indices)
+        train_dataset: Dataset[tuple[torch.Tensor, torch.Tensor]] = Subset(
+            train_base, train_indices
+        )
+    else:
+        train_dataset = train_base
 
     loaders: dict[str, DataLoader[tuple[torch.Tensor, torch.Tensor]]] = {
         "train": DataLoader(train_dataset, batch_size=config.model.batch_size, shuffle=True)
