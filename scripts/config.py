@@ -41,6 +41,9 @@ class ModelConfig:
         Early-stopping patience, in epochs, on validation IoU.
     image_size : int
         Square training and inference size in pixels.
+    valid_fraction : float
+        Fraction of training images held out for validation when the project has no
+        validation split.
     """
 
     encoder: str = "resnet34"
@@ -49,6 +52,7 @@ class ModelConfig:
     learning_rate: float = 3e-4
     patience: int = 12
     image_size: int = 1024
+    valid_fraction: float = 0.15
 
 
 @dataclass(frozen=True)
@@ -310,6 +314,7 @@ def parse_config(document: dict[str, Any], *, base_dir: Path) -> Config:
         learning_rate=_optional_float(model_map, "learning_rate", 3e-4),
         patience=_require_int(model_map, "patience", minimum=1),
         image_size=_require_int(model_map, "image_size", minimum=32),
+        valid_fraction=_optional_float(model_map, "valid_fraction", 0.15),
     )
 
     prelabel_raw = _as_mapping(top.get("prelabel", {}), "prelabel")

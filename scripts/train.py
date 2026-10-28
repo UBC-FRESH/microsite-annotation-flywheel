@@ -18,7 +18,7 @@ import cv2
 import numpy as np
 import torch
 from numpy.typing import NDArray
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, Subset
 
 from config import Config
 from model import FocalLoss, build_model, dice_loss
@@ -46,6 +46,9 @@ class TrainingResult:
         Number of epochs actually run.
     per_split : dict of str to int
         Number of images per split used for training.
+    holdout : int
+        Number of training images held out for validation because the project had no
+        validation split.
     """
 
     checkpoint_path: Path
@@ -55,6 +58,7 @@ class TrainingResult:
     test_iou: float
     epochs_run: int
     per_split: dict[str, int] = field(default_factory=dict)
+    holdout: int = 0
 
 
 class SegDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
@@ -232,17 +236,41 @@ def run_train(
     counts = _split_counts(config.dataset_dir)
     if counts["train"] == 0:
         raise FileNotFoundError(f"no training images in {config.dataset_dir / 'train'}")
-    loaders: dict[str, DataLoader[tuple[torch.Tensor, torch.Tensor]]] = {}
-    for split in ("train", "valid", "test"):
-        dataset = SegDataset(config.dataset_dir, split, size, augment=(split == "train"))
-        if len(dataset) > 0:
-            loaders[split] = DataLoader(
-                dataset, batch_size=config.model.batch_size, shuffle=(split == "train")
-            )
-    logger(f"train: {counts} on {target}")
+    train_dataset: Dataset[tuple[torch.Tensor, torch.Tensor]] = SegDataset(
+        config.dataset_dir, "train", size, augment=True
+    )
+    valid_base = SegDataset(config.dataset_dir, "valid", size, augment=False)
+    valid_dataset: Dataset[tuple[torch.Tensor, torch.Tensor]] | None = (
+        valid_base if len(valid_base) > 0 else None
+    )
+    test_dataset = SegDataset(config.dataset_dir, "test", size, augment=False)
+
+    holdout = 0
+    if valid_dataset is None and len(train_dataset) >= 5:
+        # The project has no validation split (all Dataset images are 'train'). Hold out a
+        # deterministic slice so the best epoch can be chosen instead of blindly keeping the
+        # last one, which can collapse to all-background.
+        holdout = max(1, int(round(len(train_dataset) * config.model.valid_fraction)))
+        indices = list(range(len(train_dataset)))
+        step = max(1, len(indices) // holdout)
+        valid_indices = indices[::step][:holdout]
+        valid_set = set(valid_indices)
+        train_indices = [i for i in indices if i not in valid_set]
+        valid_view = SegDataset(config.dataset_dir, "train", size, augment=False)
+        valid_dataset = Subset(valid_view, valid_indices)
+        train_dataset = Subset(train_dataset, train_indices)
+
+    loaders: dict[str, DataLoader[tuple[torch.Tensor, torch.Tensor]]] = {
+        "train": DataLoader(train_dataset, batch_size=config.model.batch_size, shuffle=True)
+    }
+    if valid_dataset is not None:
+        loaders["valid"] = DataLoader(valid_dataset, batch_size=config.model.batch_size)
+    if len(test_dataset) > 0:
+        loaders["test"] = DataLoader(test_dataset, batch_size=config.model.batch_size)
+    logger(f"train: {counts} on {target}; held out {holdout} for validation")
     has_valid = "valid" in loaders
     if not has_valid:
-        logger("train: no validation split; keeping the latest epoch's weights")
+        logger("train: too few images to hold out; keeping the latest epoch's weights")
 
     model = build_model(config.model.encoder, encoder_weights=encoder_weights).to(target)
     focal = FocalLoss()
@@ -362,4 +390,5 @@ def run_train(
         test_iou=test_iou,
         epochs_run=epochs_run,
         per_split=counts,
+        holdout=holdout,
     )

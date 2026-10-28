@@ -77,7 +77,7 @@ def test_cmd_train(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_cmd_prelabel(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    config = make_config(tmp_path)
+    config = make_config(tmp_path, threshold=0.0)
     config.checkpoints_dir.mkdir(parents=True, exist_ok=True)
     torch.save(
         build_model("resnet34", encoder_weights=None).state_dict(),
@@ -92,7 +92,7 @@ def test_cmd_prelabel(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_cmd_prelabel_uses_config_limit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    config = make_config(tmp_path, limit=1)
+    config = make_config(tmp_path, limit=1, threshold=0.0)
     config.checkpoints_dir.mkdir(parents=True, exist_ok=True)
     torch.save(
         build_model("resnet34", encoder_weights=None).state_dict(),

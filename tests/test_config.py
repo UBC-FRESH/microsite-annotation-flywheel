@@ -66,6 +66,7 @@ def test_parse_config_applies_defaults() -> None:
     assert config.prelabel.limit == 0
     assert config.prelabel.tta is True
     assert config.model.learning_rate == pytest.approx(3e-4)
+    assert config.model.valid_fraction == pytest.approx(0.15)
 
 
 @pytest.mark.parametrize(

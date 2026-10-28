@@ -100,11 +100,10 @@ def test_run_train_requires_training_images(tmp_path: Path) -> None:
         run_train(config, encoder_weights=None, device=torch.device("cpu"))
 
 
-def test_run_train_without_validation_keeps_latest(tmp_path: Path) -> None:
+def test_run_train_holds_out_validation_when_none_exists(tmp_path: Path) -> None:
     config = make_config(tmp_path)
-    _write_split(config.dataset_dir, "train", 2)  # no valid, no test
+    _write_split(config.dataset_dir, "train", 6)  # no valid, no test
     result = run_train(config, encoder_weights=None, device=torch.device("cpu"))
 
-    assert result.epochs_run == config.model.epochs
-    assert result.best_epoch == config.model.epochs
+    assert result.holdout > 0
     assert result.checkpoint_path.is_file()
