@@ -46,6 +46,8 @@ class PrelabelResult:
         Number of images skipped because they were already annotated.
     empty : int
         Number of target images skipped because the model predicted no objects.
+    empty_images : list of str
+        Image ids where the model predicted no objects.
     uploaded_images : list of str
         Image ids that received a pre-label.
     skipped_images : list of str
@@ -62,6 +64,7 @@ class PrelabelResult:
     empty: int = 0
     uploaded_images: list[str] = field(default_factory=list)
     skipped_images: list[str] = field(default_factory=list)
+    empty_images: list[str] = field(default_factory=list)
     uploads_path: Path = Path()
 
 
@@ -175,6 +178,8 @@ def run_prelabel(
 
     uploaded_ids: list[str] = []
     skipped_ids: list[str] = []
+    empty_ids: list[str] = []
+    empty_records: list[dict[str, Any]] = []
     empty_count = 0
     records: list[dict[str, Any]] = []
     for index, summary in enumerate(chosen, start=1):
@@ -198,6 +203,8 @@ def run_prelabel(
         polygons = mask_to_polygons(mask, min_area=config.prelabel.min_polygon_area)
         if not polygons:
             empty_count += 1
+            empty_ids.append(summary.id)
+            empty_records.append({"image_id": summary.id, "name": summary.name})
             logger(f"prelabel: [{index}/{len(chosen)}] {summary.name} (no objects; skipped)")
             continue
         document = polygons_to_coco(
@@ -236,6 +243,7 @@ def run_prelabel(
                 "checkpoint": str(checkpoint),
                 "prelabel_class": config.prelabel_class,
                 "uploaded": records,
+                "empty": empty_records,
             },
             indent=2,
         )
@@ -254,5 +262,6 @@ def run_prelabel(
         empty=empty_count,
         uploaded_images=uploaded_ids,
         skipped_images=skipped_ids,
+        empty_images=empty_ids,
         uploads_path=uploads_path,
     )

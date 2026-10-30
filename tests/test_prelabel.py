@@ -61,6 +61,7 @@ def test_run_prelabel_skips_images_without_objects(tmp_path: Path) -> None:
 
     assert result.uploaded == 0
     assert result.empty == 1
+    assert result.empty_images == ["u1"]
     assert client.uploads == []
 
 
