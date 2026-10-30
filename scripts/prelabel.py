@@ -185,9 +185,9 @@ def run_prelabel(
     for index, summary in enumerate(chosen, start=1):
         # Guard: re-read the image and refuse to write over any existing annotation.
         detail = client.image_detail(project, summary.id)
-        if detail.objects:
+        if detail.objects or summary.id in dataset_ids:
             skipped_ids.append(summary.id)
-            logger(f"prelabel: skip {summary.name} (already annotated)")
+            logger(f"prelabel: skip {summary.name} (annotated or already in the Dataset)")
             continue
         image_path = config.predictions_dir / "images" / summary.name
         client.download(detail.image_url, image_path)

@@ -76,6 +76,24 @@ def test_run_prelabel_propagates_upload_error(tmp_path: Path) -> None:
         run_prelabel(config, client, checkpoint, device=torch.device("cpu"))
 
 
+def test_run_prelabel_never_targets_dataset_images(tmp_path: Path) -> None:
+    # A Dataset image with zero annotations must still be excluded: Dataset membership, not
+    # annotation presence alone, is what protects it.
+    config = make_config(tmp_path, threshold=0.0)
+    client = FakeClient(
+        summaries=[summary("d1", "in_dataset.jpg", 0), summary("u1", "free.jpg", 0)],
+        dataset_ids={"d1"},
+    )
+    client.details["d1"] = detail("d1", "in_dataset.jpg", objects=[])
+    client.details["u1"] = detail("u1", "free.jpg", objects=[])
+    checkpoint = _checkpoint(config)
+
+    result = run_prelabel(config, client, checkpoint, device=torch.device("cpu"))
+
+    assert "d1" not in result.uploaded_images
+    assert [i for i, _ in client.uploads] == ["u1"]
+
+
 def test_predict_image_missing_file(tmp_path: Path) -> None:
     model = build_model("resnet34", encoder_weights=None)
     with pytest.raises(FileNotFoundError, match="could not read image"):
