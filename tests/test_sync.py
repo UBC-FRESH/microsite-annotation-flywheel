@@ -72,6 +72,26 @@ def test_run_sync_clears_stale_files(tmp_path: Path) -> None:
     assert not stale.exists()
 
 
+def test_run_sync_includes_background_only_dataset_images(tmp_path: Path) -> None:
+    # A Dataset image with zero annotations is a confirmed "no microsites" negative and must
+    # be used as an all-background training example.
+    client = FakeClient(
+        summaries=[
+            summary("a1", "annotated.jpg", 2, "train"),
+            summary("d1", "empty.jpg", 0, "train"),
+        ],
+        dataset_ids={"a1", "d1"},
+    )
+    client.details["a1"] = detail("a1", "annotated.jpg", objects=[square_object()])
+    client.details["d1"] = detail("d1", "empty.jpg", objects=[])
+    config = make_config(tmp_path)
+    result = run_sync(config, client)
+
+    assert result.annotated == 2
+    assert result.background_only == 1
+    assert (config.dataset_dir / "train" / "empty.jpg").is_file()
+
+
 def test_load_provenance_round_trip(tmp_path: Path) -> None:
     config = make_config(tmp_path)
     result = run_sync(config, _client())

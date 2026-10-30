@@ -42,6 +42,8 @@ class SyncResult:
         Number of annotated images written per split.
     unannotated : int
         Number of annotation-free images recorded for pre-labelling.
+    background_only : int
+        Number of Dataset images with no annotations, used as all-background negatives.
     provenance_path : Path
         Where the provenance record was written.
     unannotated_path : Path
@@ -53,6 +55,7 @@ class SyncResult:
     dataset_dir: Path
     per_split: dict[str, int] = field(default_factory=dict)
     unannotated: int = 0
+    background_only: int = 0
     provenance_path: Path = Path()
     unannotated_path: Path = Path()
 
@@ -115,14 +118,23 @@ def run_sync(
     """
     project = config.train_project
     logger(f"sync: listing images in '{project}'")
-    # Train only on images in the project's Dataset: those are the human annotations. Images
-    # that merely carry a model prediction are outside the Dataset and must never be training
-    # ground truth.
-    annotated = [s for s in client.iter_images(project, in_dataset=True) if s.is_annotated]
+    # Train only on images in the project's Dataset: those are the human annotations, plus
+    # confirmed "no microsites" negatives (Dataset images with zero annotations). Images that
+    # merely carry a model prediction are outside the Dataset and must never be training data.
+    dataset_images = list(client.iter_images(project, in_dataset=True))
+    annotated = [s for s in dataset_images if s.is_annotated]
+    background = [s for s in dataset_images if not s.is_annotated]
     unannotated = [s for s in client.iter_images(project, in_dataset=False) if not s.is_annotated]
-    logger(f"sync: {len(annotated)} annotated (Dataset), {len(unannotated)} unannotated")
+    logger(
+        f"sync: {len(annotated)} annotated, {len(background)} background-only (Dataset), "
+        f"{len(unannotated)} unannotated"
+    )
 
-    chosen = annotated[:limit] if limit else annotated
+    # Background-only Dataset images are confirmed "no microsites" negatives. They are valid
+    # training examples (an all-zero mask) and teach the model not to invent microsites.
+    chosen = (annotated[:limit] if limit else annotated) + (
+        background[:limit] if limit else background
+    )
     # Start from a clean dataset directory so that images removed or no longer annotated in
     # Roboflow cannot linger and be trained on in a later round.
     if config.dataset_dir.exists():
@@ -159,6 +171,7 @@ def run_sync(
         "timestamp": _timestamp(),
         "workspace": config.workspace,
         "annotated_total": len(annotated),
+        "background_only_total": len(background),
         "unannotated_total": len(unannotated),
         "synced": len(synced_ids),
         "per_split": per_split,
@@ -187,10 +200,12 @@ def run_sync(
         dataset_dir=config.dataset_dir,
         per_split=per_split,
         unannotated=len(unannotated),
+        background_only=len(background),
         provenance_path=provenance_path,
         unannotated_path=unannotated_path,
     )
     logger(f"sync: wrote {result.annotated} images to {config.dataset_dir}")
+    logger(f"sync: {result.background_only} background-only negatives included")
     logger(f"sync: {result.unannotated} unannotated images recorded for pre-labelling")
     return result
 
