@@ -23,7 +23,7 @@ def _checkpoint(config: Config) -> Path:
 
 
 def test_run_prelabel_uploads_only_unannotated(tmp_path: Path) -> None:
-    config = make_config(tmp_path)
+    config = make_config(tmp_path, threshold=0.0)
     # u2 is listed as annotation-free but is annotated on re-read: the guard must skip it.
     client = FakeClient(summaries=[summary("u1", "u.jpg", 0, "train"), summary("u2", "v.jpg", 0)])
     client.details["u1"] = detail("u1", "u.jpg", objects=[])
@@ -41,7 +41,7 @@ def test_run_prelabel_uploads_only_unannotated(tmp_path: Path) -> None:
 
 
 def test_run_prelabel_honours_limit(tmp_path: Path) -> None:
-    config = make_config(tmp_path)
+    config = make_config(tmp_path, threshold=0.0)
     client = FakeClient(summaries=[summary("u1", "u.jpg", 0), summary("u2", "v.jpg", 0)])
     client.details["u1"] = detail("u1", "u.jpg", objects=[])
     checkpoint = _checkpoint(config)
@@ -66,7 +66,7 @@ def test_run_prelabel_skips_images_without_objects(tmp_path: Path) -> None:
 
 
 def test_run_prelabel_propagates_upload_error(tmp_path: Path) -> None:
-    config = make_config(tmp_path)
+    config = make_config(tmp_path, threshold=0.0)
     client = FakeClient(summaries=[summary("u1", "u.jpg", 0)])
     client.details["u1"] = detail("u1", "u.jpg", objects=[])
     client.uploads_error = True
