@@ -128,6 +128,50 @@ def predict_image(
     return (restored > threshold).astype(np.uint8), width, height
 
 
+def load_empty_history(path: Path) -> dict[str, int]:
+    """Read the map of image id to the last round in which it was predicted empty.
+
+    Parameters
+    ----------
+    path : Path
+        Path to ``empty_history.json``.
+
+    Returns
+    -------
+    dict of str to int
+        The history; empty when the file is absent, malformed, or holds no usable entries.
+    """
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    history: dict[str, int] = {}
+    for key, value in data.items():
+        try:
+            history[str(key)] = int(value)
+        except (TypeError, ValueError):
+            continue
+    return history
+
+
+def save_empty_history(path: Path, history: dict[str, int]) -> None:
+    """Write the empty-prediction history.
+
+    Parameters
+    ----------
+    path : Path
+        Destination path; its parent directory is created.
+    history : dict of str to int
+        The map of image id to last empty round.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(history, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
 def run_prelabel(
     config: Config,
     client: RoboflowClient,
@@ -169,15 +213,28 @@ def run_prelabel(
     logger(f"prelabel: loaded {checkpoint.name} on {target}")
 
     dataset_ids = {s.id for s in client.iter_images(project, in_dataset=True)}
-    candidates = [
+    history_path = config.state_path.parent / "empty_history.json"
+    history = load_empty_history(history_path)
+    recently_empty = {
+        image_id
+        for image_id, last_round in history.items()
+        if config.round_number - last_round <= config.prelabel.empty_cooldown
+    }
+    pool = [
         s
         for s in client.iter_images(project, in_dataset=False)
         if not s.is_annotated and s.id not in dataset_ids
     ]
+    skipped_recent = [s for s in pool if s.id in recently_empty]
+    candidates = [s for s in pool if s.id not in recently_empty]
     chosen = candidates[:limit] if limit else candidates
     logger(
         "prelabel: guard ON - only images with zero annotations are targeted; "
         "existing annotations are never overwritten and images are never added to the Dataset"
+    )
+    logger(
+        f"prelabel: skipping {len(skipped_recent)} recently-empty frames "
+        f"(cooldown {config.prelabel.empty_cooldown} rounds)"
     )
     logger(f"prelabel: {len(candidates)} annotation-free images, processing {len(chosen)}")
 
@@ -239,6 +296,11 @@ def run_prelabel(
         logger(f"prelabel: [{index}/{len(chosen)}] {summary.name} ({len(polygons)} polygons)")
 
     uploads_path = config.predictions_dir / f"uploads-round-{config.round_number}.json"
+    for image_id in uploaded_ids:
+        history.pop(image_id, None)
+    for image_id in empty_ids:
+        history[image_id] = config.round_number
+    save_empty_history(history_path, history)
     uploads_path.write_text(
         json.dumps(
             {

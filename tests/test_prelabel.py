@@ -10,7 +10,7 @@ import torch
 from config import Config
 from fakes import FakeClient, detail, make_config, square_object, summary
 from model import build_model
-from prelabel import predict_image, run_prelabel
+from prelabel import load_empty_history, predict_image, run_prelabel, save_empty_history
 from roboflow_api import RoboflowError
 
 
@@ -92,6 +92,31 @@ def test_run_prelabel_never_targets_dataset_images(tmp_path: Path) -> None:
 
     assert "d1" not in result.uploaded_images
     assert [i for i, _ in client.uploads] == ["u1"]
+
+
+def test_load_and_save_empty_history(tmp_path: Path) -> None:
+    path = tmp_path / "empty_history.json"
+    assert load_empty_history(path) == {}
+    save_empty_history(path, {"a": 3, "b": 5})
+    assert load_empty_history(path) == {"a": 3, "b": 5}
+    path.write_text("not json", encoding="utf-8")
+    assert load_empty_history(path) == {}
+    path.write_text("[1, 2]", encoding="utf-8")
+    assert load_empty_history(path) == {}
+
+
+def test_run_prelabel_skips_recently_empty_frames(tmp_path: Path) -> None:
+    config = make_config(tmp_path, threshold=0.0)  # round 1, cooldown 3
+    save_empty_history(tmp_path / "empty_history.json", {"u1": 1})
+    client = FakeClient(summaries=[summary("u1", "old.jpg", 0), summary("u2", "new.jpg", 0)])
+    client.details["u1"] = detail("u1", "old.jpg", objects=[])
+    client.details["u2"] = detail("u2", "new.jpg", objects=[])
+    checkpoint = _checkpoint(config)
+
+    result = run_prelabel(config, client, checkpoint, device=torch.device("cpu"))
+
+    assert "u1" not in result.uploaded_images
+    assert "u2" in result.uploaded_images
 
 
 def test_predict_image_missing_file(tmp_path: Path) -> None:

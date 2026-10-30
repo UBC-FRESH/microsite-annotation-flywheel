@@ -71,6 +71,8 @@ class PrelabelConfig:
         Maximum number of images to pre-label in one run; ``0`` means all.
     split : str
         Roboflow split assigned to uploaded pre-labels, one of ``train``, ``valid``, ``test``.
+    empty_cooldown : int
+        How many rounds an image that was predicted empty is skipped before it is tried again.
     """
 
     threshold: float = 0.5
@@ -78,6 +80,7 @@ class PrelabelConfig:
     tta: bool = True
     limit: int = 0
     split: str = "train"
+    empty_cooldown: int = 3
 
 
 @dataclass(frozen=True)
@@ -329,6 +332,9 @@ def parse_config(document: dict[str, Any], *, base_dir: Path) -> Config:
         tta=_optional_bool(prelabel_raw, "tta", True),
         limit=_require_int(prelabel_raw, "limit", minimum=0) if "limit" in prelabel_raw else 0,
         split=split,
+        empty_cooldown=_require_int(prelabel_raw, "empty_cooldown", minimum=0)
+        if "empty_cooldown" in prelabel_raw
+        else 3,
     )
 
     data_root_raw = top.get("data_root", "_data")
