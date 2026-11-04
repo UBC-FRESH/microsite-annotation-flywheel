@@ -190,8 +190,8 @@ def choose_candidates(
         Maximum number of images to choose; ``0`` keeps every candidate.
     randomize : bool
         When ``True``, draw a uniform random sample rather than taking the first ``limit``
-        images in listing order. Listing order follows flight time, so a prefix tends to be
-        a run of consecutive frames from one part of the site.
+        images in listing order. The API's listing order is stable, so a prefix would keep
+        favouring the same part of the pool across rounds.
     seed : int
         Seed for the draw, so a round is reproducible.
 

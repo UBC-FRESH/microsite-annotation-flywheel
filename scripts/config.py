@@ -75,8 +75,9 @@ class PrelabelConfig:
         How many rounds an image that was predicted empty is skipped before it is tried again.
     randomize : bool
         Whether to draw the batch randomly from the eligible images instead of taking the
-        first ``limit`` in listing order. Random draws avoid sampling a narrow run of
-        consecutive flight frames.
+        first ``limit`` in listing order. A random draw avoids systematically favouring
+        whatever order the API returns, so successive rounds cover the eligible pool more
+        evenly.
     seed : int or None
         Seed for the random draw. ``None`` derives the seed from the round number, so a round
         is reproducible but each round samples a different set.
