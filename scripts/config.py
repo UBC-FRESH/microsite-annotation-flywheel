@@ -73,6 +73,13 @@ class PrelabelConfig:
         Roboflow split assigned to uploaded pre-labels, one of ``train``, ``valid``, ``test``.
     empty_cooldown : int
         How many rounds an image that was predicted empty is skipped before it is tried again.
+    randomize : bool
+        Whether to draw the batch randomly from the eligible images instead of taking the
+        first ``limit`` in listing order. Random draws avoid sampling a narrow run of
+        consecutive flight frames.
+    seed : int or None
+        Seed for the random draw. ``None`` derives the seed from the round number, so a round
+        is reproducible but each round samples a different set.
     """
 
     threshold: float = 0.5
@@ -81,6 +88,8 @@ class PrelabelConfig:
     limit: int = 0
     split: str = "train"
     empty_cooldown: int = 3
+    randomize: bool = True
+    seed: int | None = None
 
 
 @dataclass(frozen=True)
@@ -335,6 +344,8 @@ def parse_config(document: dict[str, Any], *, base_dir: Path) -> Config:
         empty_cooldown=_require_int(prelabel_raw, "empty_cooldown", minimum=0)
         if "empty_cooldown" in prelabel_raw
         else 3,
+        randomize=_optional_bool(prelabel_raw, "randomize", True),
+        seed=_require_int(prelabel_raw, "seed", minimum=0) if "seed" in prelabel_raw else None,
     )
 
     data_root_raw = top.get("data_root", "_data")

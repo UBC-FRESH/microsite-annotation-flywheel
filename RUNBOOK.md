@@ -83,8 +83,11 @@ python scripts/loop.py prelabel
 
 Runs the model over the images in the pre-label project that have **no** annotations yet, and
 uploads its guesses as editable pre-labels. It prints each image it writes, and it **skips** any
-image that already has an annotation. It never overwrites your work. To try it on a few images
-only, add `--limit 3`.
+image that already has an annotation. It never overwrites your work. By default it draws the
+batch **randomly** from all eligible images (reproducible for a given round), so consecutive
+rounds do not keep sampling the same run of flight frames; set `prelabel.randomize: false` in
+`config.yaml` to take the first images in listing order instead. To try it on a few images only,
+add `--limit 3`.
 
 ### Step 5: correct (in Roboflow)
 

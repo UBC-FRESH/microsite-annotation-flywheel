@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import random
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -23,7 +24,7 @@ from numpy.typing import NDArray
 from config import Config
 from geometry import mask_to_polygons, polygons_to_coco
 from model import load_model, prob_map
-from roboflow_api import RoboflowClient
+from roboflow_api import ImageSummary, RoboflowClient
 
 Logger = Callable[[str], None]
 
@@ -172,6 +173,40 @@ def save_empty_history(path: Path, history: dict[str, int]) -> None:
     path.write_text(json.dumps(history, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def choose_candidates(
+    candidates: list[ImageSummary],
+    limit: int,
+    *,
+    randomize: bool,
+    seed: int,
+) -> list[ImageSummary]:
+    """Choose which eligible images to pre-label this round.
+
+    Parameters
+    ----------
+    candidates : list of ImageSummary
+        Annotation-free images that passed the Dataset and empty-cooldown filters.
+    limit : int
+        Maximum number of images to choose; ``0`` keeps every candidate.
+    randomize : bool
+        When ``True``, draw a uniform random sample rather than taking the first ``limit``
+        images in listing order. Listing order follows flight time, so a prefix tends to be
+        a run of consecutive frames from one part of the site.
+    seed : int
+        Seed for the draw, so a round is reproducible.
+
+    Returns
+    -------
+    list of ImageSummary
+        The selected images, in draw order when randomized.
+    """
+    if limit and len(candidates) > limit:
+        if randomize:
+            return random.Random(seed).sample(candidates, limit)
+        return candidates[:limit]
+    return candidates
+
+
 def run_prelabel(
     config: Config,
     client: RoboflowClient,
@@ -227,7 +262,13 @@ def run_prelabel(
     ]
     skipped_recent = [s for s in pool if s.id in recently_empty]
     candidates = [s for s in pool if s.id not in recently_empty]
-    chosen = candidates[:limit] if limit else candidates
+    seed = config.prelabel.seed if config.prelabel.seed is not None else config.round_number
+    chosen = choose_candidates(
+        candidates,
+        limit,
+        randomize=config.prelabel.randomize,
+        seed=seed,
+    )
     logger(
         "prelabel: guard ON - only images with zero annotations are targeted; "
         "existing annotations are never overwritten and images are never added to the Dataset"
@@ -236,6 +277,11 @@ def run_prelabel(
         f"prelabel: skipping {len(skipped_recent)} recently-empty frames "
         f"(cooldown {config.prelabel.empty_cooldown} rounds)"
     )
+    if config.prelabel.randomize and limit and len(candidates) > limit:
+        logger(
+            f"prelabel: random draw of {len(chosen)} from {len(candidates)} candidates "
+            f"(seed {seed})"
+        )
     logger(f"prelabel: {len(candidates)} annotation-free images, processing {len(chosen)}")
 
     uploaded_ids: list[str] = []

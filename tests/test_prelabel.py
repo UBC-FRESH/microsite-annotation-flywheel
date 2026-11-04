@@ -10,7 +10,13 @@ import torch
 from config import Config
 from fakes import FakeClient, detail, make_config, square_object, summary
 from model import build_model
-from prelabel import load_empty_history, predict_image, run_prelabel, save_empty_history
+from prelabel import (
+    choose_candidates,
+    load_empty_history,
+    predict_image,
+    run_prelabel,
+    save_empty_history,
+)
 from roboflow_api import RoboflowError
 
 
@@ -20,6 +26,32 @@ def _checkpoint(config: Config) -> Path:
     model = build_model("resnet34", encoder_weights=None)
     torch.save(model.state_dict(), path)
     return path
+
+
+def test_choose_candidates_random_draw_is_reproducible() -> None:
+    items = [summary(f"u{i}", f"{i}.jpg", 0) for i in range(20)]
+
+    first = choose_candidates(items, 5, randomize=True, seed=7)
+    second = choose_candidates(items, 5, randomize=True, seed=7)
+
+    assert [s.id for s in first] == [s.id for s in second]
+    assert len(first) == 5
+    assert len({s.id for s in first}) == 5
+    assert all(s in items for s in first)
+
+
+def test_choose_candidates_can_keep_listing_order() -> None:
+    items = [summary(f"u{i}", f"{i}.jpg", 0) for i in range(20)]
+
+    chosen = choose_candidates(items, 5, randomize=False, seed=7)
+
+    assert [s.id for s in chosen] == ["u0", "u1", "u2", "u3", "u4"]
+
+
+def test_choose_candidates_returns_all_without_a_limit() -> None:
+    items = [summary(f"u{i}", f"{i}.jpg", 0) for i in range(3)]
+
+    assert choose_candidates(items, 0, randomize=True, seed=1) == items
 
 
 def test_run_prelabel_uploads_only_unannotated(tmp_path: Path) -> None:

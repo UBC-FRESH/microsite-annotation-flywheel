@@ -50,6 +50,24 @@ def test_parse_config_reads_every_field(tmp_path: Path) -> None:
     assert config.checkpoints_dir.name == "checkpoints"
 
 
+def test_parse_config_reads_sampling_overrides(tmp_path: Path) -> None:
+    document = dict(VALID)
+    document["prelabel"] = {
+        "threshold": 0.4,
+        "min_polygon_area": 10,
+        "tta": False,
+        "limit": 5,
+        "split": "test",
+        "randomize": False,
+        "seed": 11,
+    }
+
+    config = parse_config(document, base_dir=tmp_path)
+
+    assert config.prelabel.randomize is False
+    assert config.prelabel.seed == 11
+
+
 def test_parse_config_applies_defaults() -> None:
     minimal = {k: v for k, v in VALID.items() if k not in ("model", "prelabel")}
     minimal["model"] = {
@@ -68,6 +86,8 @@ def test_parse_config_applies_defaults() -> None:
     assert config.model.learning_rate == pytest.approx(3e-4)
     assert config.model.valid_fraction == pytest.approx(0.15)
     assert config.prelabel.empty_cooldown == 3
+    assert config.prelabel.randomize is True
+    assert config.prelabel.seed is None
 
 
 @pytest.mark.parametrize(
